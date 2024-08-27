@@ -8,3 +8,4 @@ pdf2image
 numpy
 pillow
 pandas
+python-multipart
