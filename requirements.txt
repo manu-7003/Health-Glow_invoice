@@ -10,3 +10,4 @@ pillow
 pandas
 python-multipart
 openpyxl
+jinja2
