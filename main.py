@@ -1,6 +1,3 @@
-
-
-from io import BytesIO
 from fastapi import FastAPI, File, UploadFile
 import pytesseract
 import layoutparser as lp
@@ -11,36 +8,44 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import re
-import tempfile  # Ensure tempfile is imported
+import tempfile
+import os
+from io import BytesIO
+import logging
+import shutil
 
-# Configure the Google Generative AI API Key
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+# Configure the Google Generative AI API Key directly
 GOOGLE_API_KEY = 'AIzaSyCOY1MkhyEDsOYQC0LEOnQzCCQjEgJhBYI'
+
+# Configure the API with the API Key
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Configure the Tesseract executable path on your system
-pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = shutil.which("tesseract")
 
 app = FastAPI()
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Invoice Processing API!"}
+
+# Function to clean text
 def clean_text(text):
-    """Remove unnecessary characters from the text."""
     text = re.sub(r'\*+', '', text)  # Remove asterisks
     text = re.sub(r'^\d+\.\s*', '', text)  # Remove leading numbers like '1. '
     text = re.sub(r'-+', '', text)  # Remove hyphens
     return text.strip()
 
+# Function to process image
 def process_image(image: np.array):
-    """Process a single image (from PDF or directly an image file)."""
     gray = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
     _, img_bin = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-
-    # Perform OCR using Tesseract
     ocr_result = pytesseract.image_to_string(img_bin)
 
-    # Use Google Generative AI (Gemini) to process the OCR-extracted text
     model = genai.GenerativeModel('gemini-pro')
-
-    # Enhanced prompt providing more context and constraints
     prompt = f"""
     Extract the following relevant details from the invoice text:
     1. Invoice Number
@@ -71,21 +76,18 @@ def process_image(image: np.array):
     The invoice text is as follows:
     {ocr_result}
     """
-
+    
     response = model.generate_content(prompt)
     structured_output = response.text
 
-    # Parse the structured output into a list of key-value pairs
     details = []
     for line in structured_output.split("\n"):
         if ":" in line:
             key, value = line.split(":", 1)
-            # Clean the key and value by removing unnecessary characters
             key = clean_text(key)
             value = clean_text(value)
             details.append([key, value])
 
-    # Create a pandas DataFrame to return the details
     if details:
         df = pd.DataFrame(details, columns=["Field", "Value"])
         return df
@@ -93,37 +95,31 @@ def process_image(image: np.array):
 
 @app.post("/process-invoice/")
 async def process_invoice(file: UploadFile = File(...)):
-    """Endpoint to process an invoice and extract details."""
     try:
-        # Log file details
-        print(f"Processing file: {file.filename}, type: {file.content_type}")
-        
-        # Read the file
+        logging.info(f"Processing file: {file.filename}, type: {file.content_type}")
         contents = await file.read()
 
-        # Check if it's an image or a PDF
         if file.content_type == 'application/pdf':
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                 tmp_file.write(contents)
                 pdf_path = tmp_file.name
-            print(f"PDF saved at {pdf_path}")
+            logging.info(f"PDF saved at {pdf_path}")
 
-            # Convert PDF to image
             images = convert_from_path(pdf_path)
-            df = process_image(images[0])  # Process first page for simplicity
+            df = process_image(images[0])  # Process first page
 
         elif file.content_type.startswith('image/'):
             image = Image.open(BytesIO(contents))
-            print("Processing image file")
+            logging.info("Processing image file")
             df = process_image(image)
 
         if df is not None:
-            print("Details extracted successfully")
+            logging.info("Details extracted successfully")
             return {"message": "Invoice details extracted", "data": df.to_dict(orient='records')}
         else:
-            print("Failed to extract details")
+            logging.error("Failed to extract details")
             return {"message": "Failed to extract details"}
 
     except Exception as e:
-        print(f"Error: {str(e)}")  # Log the error message
+        logging.error(f"Error: {str(e)}")
         return {"error": str(e), "message": "An error occurred while processing the invoice."}
