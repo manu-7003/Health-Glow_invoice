@@ -1,27 +1,20 @@
-/* Reset some basic styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Vibrant Gradient Background */
 body {
-    background: linear-gradient(135deg, #FF9A8B, #FF6A88, #FF99AC);
+    background: linear-gradient(135deg, #FF9A8B, #FF6A88, #FF99AC); /* Vibrant pink-to-red gradient */
     height: 100vh;
     font-family: 'Poppins', sans-serif;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    margin: 0;
+    padding: 0;
 }
 
-/* Container */
 .container {
     padding: 3rem;
     background: white;
     border-radius: 15px;
     box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
-    max-width: 650px;
+    max-width: 550px;
     width: 100%;
     text-align: center;
     transition: all 0.3s ease;
@@ -29,7 +22,11 @@ body {
     overflow: hidden;
 }
 
-/* Headings */
+.container:hover {
+    transform: scale(1.05);
+}
+
+/* Heading Styles */
 h1 {
     font-size: 2.5rem;
     color: white;
@@ -39,27 +36,87 @@ h1 {
     margin-bottom: 1rem;
 }
 
-h2 {
-    font-size: 1.8rem;
-    color: #5c4084;
-}
-
-/* Upper Section Layout */
-.upper-section {
+h4 {
+    color: white;
     margin-bottom: 2rem;
 }
 
-/* Lower Section Layout */
-.lower-section {
-    padding: 1rem;
-    background-color: #FFF5F7;
-    border-radius: 15px;
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+/* Custom Input Group with Shadows */
+.input-group {
+    margin-bottom: 20px;
 }
 
-/* Table Styling */
+.input-group-text {
+    background-color: #FF9A8B;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.form-control {
+    border: none;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    padding: 15px;
+    font-size: 1.1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom Browse Button */
+.browse {
+    background-color: #FF6A88;
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 30px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.browse:hover {
+    background-color: #FF99AC;
+    transform: translateY(-2px);
+    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.browse:focus, .browse:active {
+    background-color: #FF9A8B;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Submit Button */
+.btn-success {
+    background: linear-gradient(45deg, #FF9A8B, #FF6A88, #FF99AC);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background: linear-gradient(45deg, #FFAFBD, #ffc3a0);
+    transform: translateY(-2px);
+    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Extracted Invoice Details */
 .table-container {
-    margin-top: 1.5rem;
+    margin-top: 40px;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
 }
 
 table {
@@ -83,41 +140,16 @@ td {
     background-color: #FFF5F7;
 }
 
-/* Button Group Styling */
-.button-group, .download-group {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 1rem;
+/* Animation for smooth entry */
+.container, .table-container {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn 0.7s forwards ease-in-out;
 }
 
-/* Button Styling */
-.btn {
-    font-size: 1.2rem;
-    padding: 12px 30px;
-    border-radius: 30px;
-    transition: all 0.3s ease;
-}
-
-.btn-primary, .btn-success, .btn-danger {
-    color: white;
-    border: none;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.browse {
-    background-color: #FF6A88;
-    color: white;
-}
-
-.browse:hover {
-    background-color: #FF99AC;
-}
-
-.btn-success {
-    background-color: #5c4084;
-}
-
-.btn-danger {
-    background-color: #FF6A88;
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

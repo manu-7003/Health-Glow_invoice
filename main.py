@@ -36,9 +36,9 @@ templates = Jinja2Templates(directory="templates")
 
 # Helper function to clean the text
 def clean_text(text):
-    text = re.sub(r'\*+', '', text)  # Remove asterisks
-    text = re.sub(r'^\d+\.\s*', '', text)  # Remove leading numbers
-    text = re.sub(r'-+', '', text)  # Remove hyphens
+    text = re.sub(r'\*+', '', text)
+    text = re.sub(r'^\d+\.\s*', '', text)
+    text = re.sub(r'-+', '', text)
     return text.strip()
 
 # Process image for OCR and content extraction
@@ -128,23 +128,19 @@ async def process_invoice(request: Request, file: UploadFile = File(...)):
             # Save DataFrame to Excel
             output_excel_path = os.path.join("static", "extracted_invoice_details.xlsx")
 
-            # Create a new Excel file with the format similar to the one you provided
+            # Create a new Excel file with bold headers
             wb = Workbook()
             ws = wb.active
 
-            # Add the fields as column headers
-            for col_idx, col_name in enumerate(df['Field'], 1):
-                cell = ws.cell(row=1, column=col_idx, value=col_name)
-                cell.font = Font(bold=True)  # Make the headers bold
+            # Adding the dataframe to the worksheet
+            for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True), 1):
+                for c_idx, value in enumerate(row, 1):
+                    cell = ws.cell(row=r_idx, column=c_idx, value=value)
+                    if r_idx == 1:  # Make the first row bold
+                        cell.font = Font(bold=True)
 
-            # Add the extracted values as the first row of data
-            for col_idx, value in enumerate(df['Value'], 1):
-                ws.cell(row=2, column=col_idx, value=value)
-
-            # Save the Excel file
             wb.save(output_excel_path)
 
-            # Render the result on the page and provide the download link
             result_html = df.to_html(index=False, classes="table table-striped")
             return templates.TemplateResponse("index.html", {"request": request, "result": result_html, "excel_link": f"/static/extracted_invoice_details.xlsx"})
         else:
@@ -152,3 +148,4 @@ async def process_invoice(request: Request, file: UploadFile = File(...)):
 
     except Exception as e:
         return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
+
