@@ -9,3 +9,4 @@ numpy
 pillow
 pandas
 python-multipart
+openpyxl
