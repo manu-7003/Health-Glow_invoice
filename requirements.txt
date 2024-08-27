@@ -1,2 +1,10 @@
 fastapi
 uvicorn
+pytesseract
+layoutparser
+opencv-python-headless
+google-generativeai
+pdf2image
+numpy
+pillow
+pandas
