@@ -1,15 +1,15 @@
-// Script to enhance user interaction on file upload
-
 document.addEventListener('DOMContentLoaded', function () {
     const fileInput = document.querySelector('input[type="file"]');
-    const form = document.querySelector('form');
+    const submitButton = document.querySelector('button[type="submit"]');
 
     fileInput.addEventListener('change', function () {
         const fileName = fileInput.files[0].name;
-        alert(`File selected: ${fileName}`);
-    });
-
-    form.addEventListener('submit', function () {
-        alert('Uploading the invoice, please wait...');
+        submitButton.textContent = `Upload ${fileName}`;
+        submitButton.disabled = false;
     });
 });
+
+function resetForm() {
+    document.getElementById('invoiceForm').reset();
+    document.querySelector('button[type="submit"]').textContent = "Upload Invoice";
+}
