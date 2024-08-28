@@ -6,8 +6,7 @@ opencv-python-headless
 google-generativeai
 pdf2image
 numpy
-pillow
+Pillow
 pandas
-python-multipart
 openpyxl
 jinja2
