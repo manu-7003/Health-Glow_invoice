@@ -36,18 +36,20 @@ templates = Jinja2Templates(directory="templates")
 
 # Helper function to clean the text
 def clean_text(text):
-    text = re.sub(r'\*+', '', text)
-    text = re.sub(r'^\d+\.\s*', '', text)
-    text = re.sub(r'-+', '', text)
+    text = re.sub(r'\*+', '', text)  # Remove asterisks
+    text = re.sub(r'^\d+\.\s*', '', text)  # Remove leading numbers
+    text = re.sub(r'-+', '', text)  # Remove hyphens
     return text.strip()
 
 # Process image for OCR and content extraction
 def process_image(image: np.array):
+    print("Processing image...")
     gray = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
     _, img_bin = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
 
     # Perform OCR using Tesseract
     ocr_result = pytesseract.image_to_string(img_bin)
+    print("OCR result:", ocr_result)
 
     # Use Google Generative AI to extract invoice details
     model = genai.GenerativeModel('gemini-pro')
@@ -85,6 +87,7 @@ def process_image(image: np.array):
 
     response = model.generate_content(prompt)
     structured_output = response.text
+    print("Structured output from Gemini:", structured_output)
 
     # Parse structured output
     details = []
@@ -97,6 +100,7 @@ def process_image(image: np.array):
 
     if details:
         df = pd.DataFrame(details, columns=["Field", "Value"])
+        print("DataFrame created:", df)
         return df
     return None
 
@@ -108,13 +112,16 @@ async def render_form(request: Request):
 # Endpoint to handle form submission and display extracted invoice details
 @app.post("/upload-invoice/")
 async def process_invoice(request: Request, file: UploadFile = File(...)):
+    print("Upload endpoint hit")
     try:
         contents = await file.read()
+        print("File read successfully")
 
         if file.content_type == 'application/pdf':
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                 tmp_file.write(contents)
                 pdf_path = tmp_file.name
+            print(f"PDF saved at {pdf_path}")
 
             # Convert PDF to image
             images = convert_from_path(pdf_path)
@@ -140,12 +147,14 @@ async def process_invoice(request: Request, file: UploadFile = File(...)):
                         cell.font = Font(bold=True)
 
             wb.save(output_excel_path)
+            print(f"Excel file saved at {output_excel_path}")
 
             result_html = df.to_html(index=False, classes="table table-striped")
             return templates.TemplateResponse("index.html", {"request": request, "result": result_html, "excel_link": f"/static/extracted_invoice_details.xlsx"})
         else:
+            print("Failed to extract details")
             return templates.TemplateResponse("index.html", {"request": request, "error": "Failed to extract details"})
 
     except Exception as e:
+        print(f"Error occurred: {e}")
         return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
-
