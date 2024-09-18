@@ -1,155 +1,18 @@
 body {
-    background: linear-gradient(135deg, #FF9A8B, #FF6A88, #FF99AC); /* Vibrant pink-to-red gradient */
+    background: linear-gradient(135deg, #FF9A8B, #FF6A88, #FF99AC);
     height: 100vh;
     font-family: 'Poppins', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0;
-    padding: 0;
 }
 
 .container {
-    padding: 3rem;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
-    max-width: 550px;
-    width: 100%;
-    text-align: center;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.container:hover {
-    transform: scale(1.05);
-}
-
-/* Heading Styles */
-h1 {
-    font-size: 2.5rem;
-    color: white;
-    background: linear-gradient(90deg, #FFAFBD, #ffc3a0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 1rem;
-}
-
-h4 {
-    color: white;
-    margin-bottom: 2rem;
-}
-
-/* Custom Input Group with Shadows */
-.input-group {
-    margin-bottom: 20px;
-}
-
-.input-group-text {
-    background-color: #FF9A8B;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-}
-
-.form-control {
-    border: none;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-    border-radius: 30px;
-    padding: 15px;
-    font-size: 1.1rem;
-}
-
-.form-control:focus {
-    outline: none;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* Custom Browse Button */
-.browse {
-    background-color: #FF6A88;
-    border: none;
-    color: white;
-    padding: 15px 30px;
-    border-radius: 30px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.browse:hover {
-    background-color: #FF99AC;
-    transform: translateY(-2px);
-    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.browse:focus, .browse:active {
-    background-color: #FF9A8B;
-    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* Submit Button */
-.btn-success {
-    background: linear-gradient(45deg, #FF9A8B, #FF6A88, #FF99AC);
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    font-size: 1.2rem;
-    border-radius: 30px;
-    cursor: pointer;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.btn-success:hover {
-    background: linear-gradient(45deg, #FFAFBD, #ffc3a0);
-    transform: translateY(-2px);
-    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-/* Extracted Invoice Details */
-.table-container {
-    margin-top: 40px;
     padding: 2rem;
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin-top: 50px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-table, th, td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: left;
-}
-
-th {
-    background-color: #FF6A88;
-    color: white;
-    font-size: 1.2rem;
-}
-
-td {
-    background-color: #FFF5F7;
-}
-
-/* Animation for smooth entry */
-.container, .table-container {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeIn 0.7s forwards ease-in-out;
-}
-
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+h1 {
+    color: #FF6A88;
 }

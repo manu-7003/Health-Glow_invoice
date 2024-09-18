@@ -1,57 +1,41 @@
-from fastapi import FastAPI, File, UploadFile, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, UploadFile
 import pytesseract
-import layoutparser as lp
-import cv2
 import google.generativeai as genai
+import cv2  # Import cv2 here
 from pdf2image import convert_from_path
 import numpy as np
 from PIL import Image
 import pandas as pd
 import re
-import tempfile
 from io import BytesIO
-import os
-from openpyxl import Workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.styles import Font
+import tempfile
+from fastapi.responses import StreamingResponse
+
 
 # Configure Google Generative AI API Key
 GOOGLE_API_KEY = 'AIzaSyCOY1MkhyEDsOYQC0LEOnQzCCQjEgJhBYI'
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# Configure the Tesseract executable path
+# Configure Tesseract executable path
 pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
 
-# Initialize FastAPI app
 app = FastAPI()
 
-# Mount static files (for serving CSS and JS)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Initialize Jinja2Templates
-templates = Jinja2Templates(directory="templates")
-
-# Helper function to clean the text
 def clean_text(text):
+    """Remove unnecessary characters from the text."""
     text = re.sub(r'\*+', '', text)  # Remove asterisks
     text = re.sub(r'^\d+\.\s*', '', text)  # Remove leading numbers
     text = re.sub(r'-+', '', text)  # Remove hyphens
     return text.strip()
 
-# Process image for OCR and content extraction
 def process_image(image: np.array):
-    print("Processing image...")
+    """Process a single image (from PDF or directly an image file)."""
     gray = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
     _, img_bin = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
 
-    # Perform OCR using Tesseract
     ocr_result = pytesseract.image_to_string(img_bin)
-    print("OCR result:", ocr_result)
 
-    # Use Google Generative AI to extract invoice details
+    # Use Google Generative AI to process the OCR-extracted text
     model = genai.GenerativeModel('gemini-pro')
 
     prompt = f"""
@@ -87,9 +71,7 @@ def process_image(image: np.array):
 
     response = model.generate_content(prompt)
     structured_output = response.text
-    print("Structured output from Gemini:", structured_output)
 
-    # Parse structured output
     details = []
     for line in structured_output.split("\n"):
         if ":" in line:
@@ -100,30 +82,52 @@ def process_image(image: np.array):
 
     if details:
         df = pd.DataFrame(details, columns=["Field", "Value"])
-        print("DataFrame created:", df)
         return df
     return None
 
-# Root endpoint for the website
-@app.get("/")
-async def render_form(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def export_to_excel(df: pd.DataFrame):
+    """Export the DataFrame to an Excel file and return the buffer."""
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Invoice Details')
+    buffer.seek(0)
+    return buffer
 
-# Endpoint to handle form submission and display extracted invoice details
-@app.post("/upload-invoice/")
-async def process_invoice(request: Request, file: UploadFile = File(...)):
-    print("Upload endpoint hit")
+@app.post("/process-invoice/")
+async def process_invoice(file: UploadFile = File(...)):
+    """Endpoint to process an invoice and extract details."""
     try:
         contents = await file.read()
-        print("File read successfully")
 
         if file.content_type == 'application/pdf':
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                 tmp_file.write(contents)
                 pdf_path = tmp_file.name
-            print(f"PDF saved at {pdf_path}")
+            images = convert_from_path(pdf_path)
+            df = process_image(images[0])  # Process first page for simplicity
 
-            # Convert PDF to image
+        elif file.content_type.startswith('image/'):
+            image = Image.open(BytesIO(contents))
+            df = process_image(image)
+
+        if df is not None:
+            return {"message": "Invoice details extracted", "data": df.to_dict(orient='records')}
+        else:
+            return {"message": "Failed to extract details"}
+
+    except Exception as e:
+        return {"error": str(e), "message": "An error occurred while processing the invoice."}
+
+@app.post("/download-invoice-excel/")
+async def download_invoice_excel(file: UploadFile = File(...)):
+    """Endpoint to process an invoice and return an Excel file."""
+    try:
+        contents = await file.read()
+
+        if file.content_type == 'application/pdf':
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                tmp_file.write(contents)
+                pdf_path = tmp_file.name
             images = convert_from_path(pdf_path)
             df = process_image(images[0])
 
@@ -132,29 +136,14 @@ async def process_invoice(request: Request, file: UploadFile = File(...)):
             df = process_image(image)
 
         if df is not None:
-            # Save DataFrame to Excel
-            output_excel_path = os.path.join("static", "extracted_invoice_details.xlsx")
-
-            # Create a new Excel file with bold headers
-            wb = Workbook()
-            ws = wb.active
-
-            # Adding the dataframe to the worksheet
-            for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True), 1):
-                for c_idx, value in enumerate(row, 1):
-                    cell = ws.cell(row=r_idx, column=c_idx, value=value)
-                    if r_idx == 1:  # Make the first row bold
-                        cell.font = Font(bold=True)
-
-            wb.save(output_excel_path)
-            print(f"Excel file saved at {output_excel_path}")
-
-            result_html = df.to_html(index=False, classes="table table-striped")
-            return templates.TemplateResponse("index.html", {"request": request, "result": result_html, "excel_link": f"/static/extracted_invoice_details.xlsx"})
+            excel_file = export_to_excel(df)
+            return StreamingResponse(
+                excel_file,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=invoice_details.xlsx"}
+            )
         else:
-            print("Failed to extract details")
-            return templates.TemplateResponse("index.html", {"request": request, "error": "Failed to extract details"})
+            return {"message": "Failed to extract details"}
 
     except Exception as e:
-        print(f"Error occurred: {e}")
-        return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
+        return {"error": str(e), "message": "An error occurred while processing the invoice."}
