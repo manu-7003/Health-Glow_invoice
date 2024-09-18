@@ -11,5 +11,4 @@ pandas
 openpyxl
 python-multipart
 jinja2
-
-
+layoutparser
